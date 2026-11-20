@@ -1,26 +1,22 @@
-<?php 
-include('config.php');
-if(isset($_POST['Modifier']))
-{
-    $id=$_SESSION['id'];
-    $nom=$_POST['nom'];
-    $email=$_POST['email'];
-    $objet=$_POST['objet'];
-    $msg=$_POST['msg'];
-    
+<?php
+// Enregistre les modifications d'un message (formulaire de update.php).
+require 'config.php';
+require_admin();
 
-    $query = "UPDATE contact SET nom = '$nom' , email = '$email' , objet = '$objet' , msg = '$msg'  where id = '$id' ";
-    $query_run = mysqli_query($conn, $query);
-
-    if($query_run)
-    {
-        $_SESSION['status'] = "Data Updated Successfully";
-        header("Location: afficher.php");
-    }
-    else
-    {
-        $_SESSION['status'] = "Not Updated";
-        header("Location: afficher.php");
-    }
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    redirect('afficher.php');
 }
-?>
+
+$id = (int) ($_POST['id'] ?? 0);
+[$data, $error] = validate_contact($_POST);
+if ($error) {
+    flash('error', $error);
+    redirect('update.php?id=' . $id);
+}
+
+$stmt = $conn->prepare('UPDATE contact SET nom = ?, email = ?, objet = ?, msg = ? WHERE id = ?');
+$stmt->bind_param('ssssi', $data['nom'], $data['email'], $data['objet'], $data['msg'], $id);
+$stmt->execute();
+
+flash('success', 'Message modifié avec succès.');
+redirect('afficher.php');

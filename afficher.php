@@ -1,21 +1,14 @@
 <?php
-include('config.php');
-$x=0;
-for ($i=1;$i<=$x+200;$i++){
-  if (isset($_POST[$i+200])){
-    header("location:update.php");
-    $_SESSION['id']=$i;
-    break;
-  }
-}
-for ($y=1;$y<=$x+100;$y++){
-  if (isset($_POST[$y+100])){
-    header("location:delete.php");
-    $_SESSION['id']=$y;
-    break;
-  }
-}
+// Liste des messages de contact (réservée aux administrateurs).
+require 'config.php';
+require_admin();
+
+$messages = $conn->query('SELECT id, nom, email, objet, msg FROM contact ORDER BY id DESC')
+                 ->fetch_all(MYSQLI_ASSOC);
+$flash = take_flash();
 ?>
+<!DOCTYPE html>
+<html lang="fr">
 <head>
     <meta charset="utf-8">
     <title>GYMSTER - Gym HTML Template</title>
@@ -97,7 +90,7 @@ for ($y=1;$y<=$x+100;$y++){
                         <div class="navbar-nav mr-auto py-0">
                             <a href="index.html" class="nav-item nav-link">Home</a>
                             <a href="about.html" class="nav-item nav-link">About</a>
-                            <a href="class.html" class="nav-item nav-link active">Classes</a>
+                            <a href="class.html" class="nav-item nav-link">Classes</a>
                             <a href="team.html" class="nav-item nav-link">Trainers</a>
                             <div class="nav-item dropdown">
                                 <a href="#" class="nav-link dropdown-toggle" data-bs-toggle="dropdown">Pages</a>
@@ -122,21 +115,28 @@ for ($y=1;$y<=$x+100;$y++){
     <div class="container-fluid bg-primary p-5 bg-hero mb-5">
         <div class="row py-5">
             <div class="col-12 text-center">
-                <h1 class="display-2 text-uppercase text-white mb-md-4">Classes</h1>
+                <h1 class="display-2 text-uppercase text-white mb-md-4">Messages</h1>
                 <a href="index.html" class="btn btn-primary py-md-3 px-md-5 me-3">Home</a>
-                <a href="class.html" class="btn btn-light py-md-3 px-md-5">Classes</a>
+                <a href="logout.php" class="btn btn-light py-md-3 px-md-5">Déconnexion</a>
             </div>
         </div>
     </div>
 
-    <?php
-        $sql="SELECT * FROM contact";
-        $res=mysqli_query($conn,$sql);
-        $conn->close();
+    <div class="container mb-5">
+      <p class="text-muted">Connecté en tant que <strong><?= e($_SESSION['user_nom'] ?? '') ?></strong>
+        · <?= count($messages) ?> message(s)</p>
 
-    ?>
-    <form method="POST">
-      <table class="table table-hover">
+      <?php if ($flash): ?>
+        <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'danger' ?>" role="alert">
+          <?= e($flash['message']) ?>
+        </div>
+      <?php endif; ?>
+
+      <?php if (!$messages): ?>
+        <p class="text-center py-5">Aucun message pour le moment.</p>
+      <?php else: ?>
+      <div class="table-responsive">
+      <table class="table table-hover align-middle">
       <thead>
         <tr>
           <th scope="col">#</th>
@@ -144,39 +144,31 @@ for ($y=1;$y<=$x+100;$y++){
           <th scope="col">Mail</th>
           <th scope="col">Object</th>
           <th scope="col">Message</th>
+          <th scope="col">Actions</th>
         </tr>
       </thead>
       <tbody>
-        <?php
-          while($ligne=mysqli_fetch_array($res)){
-        ?>
+        <?php foreach ($messages as $ligne): ?>
         <tr>
-          <th scope="row"><?php echo $ligne['id']; $x=$ligne['id'];?></th>
-          <td name="nom"><?php echo $ligne['nom'];?></td>
-          <td name="email"><?php echo $ligne['email'];?></td>
-          <td name="objet"><?php echo $ligne['objet'];?></td>
-          <td name="msg"><?php echo $ligne['msg'];?></td>
-          <td>
-            <button class="btn btn-danger" name="<?php echo $x+100;?>"><i class="fa fa-trash-o"></i>Supprimer</button>
-            <button class="btn btn-primary" name="<?php echo $x+200;?>"><i class="fa fa-pencil-square-o"></i>Modifier</button></td>
+          <th scope="row"><?= (int) $ligne['id'] ?></th>
+          <td><?= e($ligne['nom']) ?></td>
+          <td><?= e($ligne['email']) ?></td>
+          <td><?= e($ligne['objet']) ?></td>
+          <td><?= nl2br(e($ligne['msg'])) ?></td>
+          <td class="text-nowrap">
+            <a class="btn btn-primary btn-sm" href="update.php?id=<?= (int) $ligne['id'] ?>"><i class="fas fa-edit me-1"></i>Modifier</a>
+            <form method="POST" action="delete.php" class="d-inline" onsubmit="return confirm('Supprimer ce message ?');">
+              <input type="hidden" name="id" value="<?= (int) $ligne['id'] ?>">
+              <button type="submit" class="btn btn-danger btn-sm"><i class="fas fa-trash me-1"></i>Supprimer</button>
+            </form>
+          </td>
         </tr>
-        <?php } ?>
+        <?php endforeach; ?>
       </tbody>
       </table>
-          </form>
-      <?php if (isset($_SESSION['status'])){
-            echo "<span class='line'>";
-                echo "<p class='status' style=\"color:green;
-                pointer-events: none; \">".$_SESSION['status'];
-                unset($_SESSION['status']);
-            }else if (isset($_SESSION['statusbad'])){
-                echo "<span class='line'>";
-                echo "<p class='status' style=\"color:red;
-                pointer-events: none; \">".$_SESSION['statusbad'];
-                unset($_SESSION['statusbad']); 
-            }
-            echo " </span>"
-                ?>
+      </div>
+      <?php endif; ?>
+    </div>
 
 
 <div class="container-fluid bg-dark text-secondary px-5 mt-5">
@@ -267,11 +259,15 @@ for ($y=1;$y<=$x+100;$y++){
 
 
 
-<!-- swiper js link  -->
-<script src="https://unpkg.com/swiper@7/swiper-bundle.min.js"></script>
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="lib/easing/easing.min.js"></script>
+    <script src="lib/waypoints/waypoints.min.js"></script>
+    <script src="lib/counterup/counterup.min.js"></script>
+    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
 
-<!-- custom js file link  -->
-<script src="js/script.js"></script>
-
-        </body>
+    <!-- Template Javascript -->
+    <script src="js/main.js"></script>
+</body>
 </html>      

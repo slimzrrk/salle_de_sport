@@ -20,6 +20,8 @@ SET time_zone = "+00:00";
 --
 -- Base de données : `projet`
 --
+CREATE DATABASE IF NOT EXISTS `projet` DEFAULT CHARACTER SET utf8mb4 COLLATE utf8mb4_general_ci;
+USE `projet`;
 
 -- --------------------------------------------------------
 
@@ -45,7 +47,8 @@ CREATE TABLE `user` (
   `id` int(11) NOT NULL,
   `nom` varchar(100) NOT NULL,
   `email` varchar(100) NOT NULL,
-  `mdp` varchar(100) NOT NULL
+  `mdp` varchar(255) NOT NULL COMMENT 'hash password_hash()',
+  `role` enum('membre','admin') NOT NULL DEFAULT 'membre'
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_general_ci;
 
 --
@@ -62,7 +65,8 @@ ALTER TABLE `contact`
 -- Index pour la table `user`
 --
 ALTER TABLE `user`
-  ADD PRIMARY KEY (`id`);
+  ADD PRIMARY KEY (`id`),
+  ADD UNIQUE KEY `email` (`email`);
 
 --
 -- AUTO_INCREMENT pour les tables déchargées
@@ -72,14 +76,19 @@ ALTER TABLE `user`
 -- AUTO_INCREMENT pour la table `contact`
 --
 ALTER TABLE `contact`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 
 --
 -- AUTO_INCREMENT pour la table `user`
 --
 ALTER TABLE `user`
-  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT, AUTO_INCREMENT=6;
+  MODIFY `id` int(11) NOT NULL AUTO_INCREMENT;
 COMMIT;
+
+--
+-- Pour donner les droits administrateur à un compte (après son inscription) :
+--   UPDATE `user` SET `role` = 'admin' WHERE `email` = 'votre@email.com';
+--
 
 /*!40101 SET CHARACTER_SET_CLIENT=@OLD_CHARACTER_SET_CLIENT */;
 /*!40101 SET CHARACTER_SET_RESULTS=@OLD_CHARACTER_SET_RESULTS */;

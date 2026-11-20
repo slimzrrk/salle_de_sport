@@ -1,28 +1,22 @@
 <?php
-include('config.php');
+// Formulaire de modification d'un message (ouvert depuis afficher.php).
+require 'config.php';
+require_admin();
 
-$id=$_SESSION['id'];
-$nom="";
-$email="";
-$objet="";
-$msg="";
+$id = (int) ($_GET['id'] ?? 0);
+$stmt = $conn->prepare('SELECT id, nom, email, objet, msg FROM contact WHERE id = ?');
+$stmt->bind_param('i', $id);
+$stmt->execute();
+$message = $stmt->get_result()->fetch_assoc();
 
-
-$search_Query ="SELECT * FROM contact where id LIKE '$id'";   
-    
-$search_Result=mysqli_query ($conn,$search_Query);
-
-while($row = mysqli_fetch_array($search_Result))
-   {
-      $nom=$row ['nom'];
-      $email=$row['email'];
-      $objet=$row['objet'];
-      $msg=$row['msg'];
-   }
-
+if (!$message) {
+    flash('error', 'Message introuvable.');
+    redirect('afficher.php');
+}
+$flash = take_flash();
 ?>
-
-<html>
+<!DOCTYPE html>
+<html lang="fr">
 <head>
     <meta charset="utf-8">
     <title>GYMSTER - Gym HTML Template</title>
@@ -102,7 +96,7 @@ while($row = mysqli_fetch_array($search_Result))
                     </button>
                     <div class="collapse navbar-collapse justify-content-between" id="navbarCollapse">
                         <div class="navbar-nav mr-auto py-0">
-                            <a href="index.html" class="nav-item nav-link active">Home</a>
+                            <a href="index.html" class="nav-item nav-link">Home</a>
                             <a href="about.html" class="nav-item nav-link">About</a>
                             <a href="class.html" class="nav-item nav-link">Classes</a>
                             <a href="team.html" class="nav-item nav-link">Trainers</a>
@@ -126,22 +120,29 @@ while($row = mysqli_fetch_array($search_Result))
     <div class="row g-0">
             <div class="col-lg-6">
                 <div class="bg-dark p-5">
+                    <?php if ($flash): ?>
+                        <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'danger' ?>" role="alert"><?= e($flash['message']) ?></div>
+                    <?php endif; ?>
                     <form method="POST" action="updatee.php">
+                        <input type="hidden" name="id" value="<?= (int) $message['id'] ?>">
                         <div class="row g-3">
                             <div class="col-6">
-                                <input value="<?php echo $nom?>"type="text" class="form-control bg-light border-0 px-4" name="nom" placeholder="Your Name" style="height: 55px;">
+                                <input value="<?= e($message['nom']) ?>" type="text" class="form-control bg-light border-0 px-4" name="nom" placeholder="Your Name" maxlength="100" required style="height: 55px;">
                             </div>
                             <div class="col-6">
-                                <input value="<?php echo $email?>"type="email" class="form-control bg-light border-0 px-4" name="email" placeholder="Your Email" style="height: 55px;">
+                                <input value="<?= e($message['email']) ?>" type="email" class="form-control bg-light border-0 px-4" name="email" placeholder="Your Email" maxlength="100" required style="height: 55px;">
                             </div>
                             <div class="col-12">
-                                <input value="<?php echo $objet?>"type="text" class="form-control bg-light border-0 px-4" name="objet" placeholder="Subject" style="height: 55px;">
+                                <input value="<?= e($message['objet']) ?>" type="text" class="form-control bg-light border-0 px-4" name="objet" placeholder="Subject" maxlength="100" required style="height: 55px;">
                             </div>
                             <div class="col-12">
-                                <textarea value="<?php echo $msg?>" class="form-control bg-light border-0 px-4 py-3" name="msg" rows="4" placeholder="Message"></textarea>
+                                <textarea class="form-control bg-light border-0 px-4 py-3" name="msg" rows="4" placeholder="Message" maxlength="500" required><?= e($message['msg']) ?></textarea>
                             </div>
-                            <div class="col-12">
-                                <button class="btn btn-primary w-100 py-3" name="Modifier" type="submit">Send Message</button>
+                            <div class="col-6">
+                                <a href="afficher.php" class="btn btn-light w-100 py-3">Annuler</a>
+                            </div>
+                            <div class="col-6">
+                                <button class="btn btn-primary w-100 py-3" name="Modifier" type="submit">Enregistrer</button>
                             </div>
                         </div>
                     </form>
@@ -150,9 +151,9 @@ while($row = mysqli_fetch_array($search_Result))
                 
             </div>
             <div class="col-lg-6">
-                <iframe class="w-100"
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1617.1509512170826!2d10.625701581697879!3d35.841600064887515!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x130275b8469424b5%3A0x685a7499cac68ad1!2sCalifornia%20Gym!5e0!3m2!1sfr!2stn!4v1672695143634!5m2!1sfr!2stn" width="600" height="440" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-                    frameborder="0" style="height: 457px; border:0;" allowfullscreen="" aria-hidden="false"
+                <iframe class="d-block w-100 h-100"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1617.1509512170826!2d10.625701581697879!3d35.841600064887515!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x130275b8469424b5%3A0x685a7499cac68ad1!2sCalifornia%20Gym!5e0!3m2!1sfr!2stn!4v1672695143634!5m2!1sfr!2stn" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                    frameborder="0" style="min-height: 440px; border:0;" allowfullscreen="" aria-hidden="false"
                     tabindex="0"></iframe>
             </div>
 </div>
@@ -233,6 +234,17 @@ while($row = mysqli_fetch_array($search_Result))
             </div>
         </div>
     </div>
-        </body>
+
+    <!-- JavaScript Libraries -->
+    <script src="https://code.jquery.com/jquery-3.4.1.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.0.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="lib/easing/easing.min.js"></script>
+    <script src="lib/waypoints/waypoints.min.js"></script>
+    <script src="lib/counterup/counterup.min.js"></script>
+    <script src="lib/owlcarousel/owl.carousel.min.js"></script>
+
+    <!-- Template Javascript -->
+    <script src="js/main.js"></script>
+</body>
 </html>
 

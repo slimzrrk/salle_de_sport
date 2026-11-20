@@ -1,3 +1,7 @@
+<?php
+require 'config.php';
+$flash = take_flash();
+?>
 <!DOCTYPE html>
 <html lang="en">
 
@@ -153,37 +157,42 @@
         </div>
         <div class="row g-0">
             <div class="col-lg-6">
-                <div class="bg-dark p-5">
+                <div class="bg-dark p-5" id="contact-form">
+                    <?php if ($flash): ?>
+                        <div class="alert alert-<?= $flash['type'] === 'success' ? 'success' : 'danger' ?>" role="alert"><?= e($flash['message']) ?></div>
+                    <?php endif; ?>
                     <form method="POST" action="create.php">
                         <div class="row g-3">
                             <div class="col-6">
-                                <input type="text" class="form-control bg-light border-0 px-4" name="nom" placeholder="Your Name" style="height: 55px;">
+                                <input type="text" class="form-control bg-light border-0 px-4" name="nom" placeholder="Your Name" maxlength="100" required style="height: 55px;">
                             </div>
                             <div class="col-6">
-                                <input type="email" class="form-control bg-light border-0 px-4" name="email" placeholder="Your Email" style="height: 55px;">
+                                <input type="email" class="form-control bg-light border-0 px-4" name="email" placeholder="Your Email" maxlength="100" required style="height: 55px;">
                             </div>
                             <div class="col-12">
-                                <input type="text" class="form-control bg-light border-0 px-4" name="objet" placeholder="Subject" style="height: 55px;">
+                                <input type="text" class="form-control bg-light border-0 px-4" name="objet" placeholder="Subject" maxlength="100" required style="height: 55px;">
                             </div>
                             <div class="col-12">
-                                <textarea class="form-control bg-light border-0 px-4 py-3" name="msg" rows="4" placeholder="Message"></textarea>
+                                <textarea class="form-control bg-light border-0 px-4 py-3" name="msg" rows="4" placeholder="Message" maxlength="500" required></textarea>
                             </div>
                             <div class="col-12">
                                 <button class="btn btn-primary w-100 py-3" name="envoyer" type="submit">Send Message</button>
                             </div>
                         </div>
                     </form>
-                        <div class="row g-3">
-                        <div class="col-12">
-                                <a class="btn btn-primary w-100 py-3" href="afficher.php" type="submit">contacts</a>
+                    <?php if (is_admin()): ?>
+                        <div class="row g-3 mt-1">
+                            <div class="col-12">
+                                <a class="btn btn-outline-light w-100 py-3" href="afficher.php">Voir les messages reçus</a>
                             </div>
                         </div>
+                    <?php endif; ?>
                 </div>
             </div>
             <div class="col-lg-6">
-                <iframe class="w-100"
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1617.1509512170826!2d10.625701581697879!3d35.841600064887515!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x130275b8469424b5%3A0x685a7499cac68ad1!2sCalifornia%20Gym!5e0!3m2!1sfr!2stn!4v1672695143634!5m2!1sfr!2stn" width="600" height="440" style="border:0;" allowfullscreen="" loading="lazy" referrerpolicy="no-referrer-when-downgrade">
-                    frameborder="0" style="height: 457px; border:0;" allowfullscreen="" aria-hidden="false"
+                <iframe class="d-block w-100 h-100"
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d1617.1509512170826!2d10.625701581697879!3d35.841600064887515!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x130275b8469424b5%3A0x685a7499cac68ad1!2sCalifornia%20Gym!5e0!3m2!1sfr!2stn!4v1672695143634!5m2!1sfr!2stn" loading="lazy" referrerpolicy="no-referrer-when-downgrade"
+                    frameborder="0" style="min-height: 440px; border:0;" allowfullscreen="" aria-hidden="false"
                     tabindex="0"></iframe>
             </div>
         </div>

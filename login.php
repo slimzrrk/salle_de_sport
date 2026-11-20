@@ -1,51 +1,75 @@
 <?php
 require 'config.php';
 
-if(isset($_POST["submit"])){
-
-  $email = $_POST["email"];
-  $mdp = $_POST["mdp"];
-  $result = mysqli_query($conn, "SELECT * FROM user WHERE email = '$email'");
-  $row = mysqli_fetch_assoc($result);
-  if(mysqli_num_rows($result) > 0){
-    if($mdp == $row['mdp']){
-      $_SESSION["login"] = true;
-      $_SESSION["id"] = $row["id"];
-      header("Location: index.php");
-    }
-    else{
-        echo
-        "<script> alert('Wrong Password'); </script>";
-    }
-  }
-  else{
-    echo
-    "<script> alert('User Not Registered'); </script>";
-  }
+if (!empty($_SESSION['user_id'])) {
+    redirect('index.html');
 }
-?>
 
+$error = null;
+if ($_SERVER['REQUEST_METHOD'] === 'POST') {
+    $email = trim($_POST['email'] ?? '');
+    $mdp   = $_POST['mdp'] ?? '';
+
+    $stmt = $conn->prepare('SELECT id, nom, mdp FROM user WHERE email = ?');
+    $stmt->bind_param('s', $email);
+    $stmt->execute();
+    $user = $stmt->get_result()->fetch_assoc();
+
+    $valid = false;
+    if ($user) {
+        if (password_get_info($user['mdp'])['algoName'] === 'unknown') {
+            // Ancien compte dont le mot de passe était stocké en clair :
+            // on le vérifie une dernière fois puis on le remplace par son hash.
+            $valid = hash_equals($user['mdp'], $mdp);
+            if ($valid) {
+                $hash = password_hash($mdp, PASSWORD_DEFAULT);
+                $upd = $conn->prepare('UPDATE user SET mdp = ? WHERE id = ?');
+                $upd->bind_param('si', $hash, $user['id']);
+                $upd->execute();
+            }
+        } else {
+            $valid = password_verify($mdp, $user['mdp']);
+        }
+    }
+
+    if ($valid) {
+        session_regenerate_id(true); // évite la fixation de session
+        $_SESSION['user_id']  = (int) $user['id'];
+        $_SESSION['user_nom'] = $user['nom'];
+        redirect('index.html');
+    }
+    // Message volontairement identique dans les deux cas (email inconnu / mauvais mot de passe).
+    $error = 'Email ou mot de passe incorrect.';
+}
+$flash = take_flash();
+?>
 <!DOCTYPE html>
-<html lang="en" dir="ltr">
+<html lang="fr" dir="ltr">
   <head>
     <meta charset="utf-8">
-    <title>Login</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Connexion</title>
     <link rel="stylesheet" href="css/login.css">
   </head>
   <body>
-  
+
     <div class="center">
       <h1>Login</h1>
-      <form  method="post" >
+      <form method="post">
+        <?php if ($error): ?>
+          <p class="alert alert-error"><?= e($error) ?></p>
+        <?php elseif ($flash): ?>
+          <p class="alert alert-<?= e($flash['type']) ?>"><?= e($flash['message']) ?></p>
+        <?php endif; ?>
         <div class="txt_field">
-        <input type="text" name="email" Placeholder="Email" required="">
+          <input type="email" name="email" placeholder="Email" value="<?= e($_POST['email'] ?? '') ?>" required>
         </div>
         <div class="txt_field">
-        <input type="password" name="mdp" Placeholder="Password" required="">
+          <input type="password" name="mdp" placeholder="Password" required>
         </div>
-        <input  name="submit" type="submit" value="Login">
+        <input name="submit" type="submit" value="Login">
         <div class="signup_link">
-          Not a member? <a href="Signup.php">Sign up</a>
+          Not a member? <a href="signup.php">Sign up</a>
         </div>
       </form>
     </div>

@@ -121,3 +121,20 @@ nav {
   justify-content: space-between;
   padding: 35px 43%;
 }
+
+/* Messages d'erreur / de confirmation (connexion, inscription) */
+.alert{
+  margin: 20px 0 0;
+  padding: 10px 14px;
+  border-radius: 5px;
+  font-size: 14px;
+  text-align: center;
+}
+.alert-error{
+  background: #fdecea;
+  color: #b3261e;
+}
+.alert-success{
+  background: #e7f6ec;
+  color: #1e6b34;
+}
